@@ -1,3 +1,5 @@
+from typing import Any
+
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField, StringRelatedField
 from rest_framework.serializers import ModelSerializer
@@ -8,7 +10,7 @@ from cinema.models import (CinemaHall, Genre, Ticket, Order, MovieSession, Movie
 class CinemaHallSerializer(ModelSerializer):
     class Meta:
         model = CinemaHall
-        fields = ("name", "rows", "seats_in_row", "capacity")
+        fields = ("id", "name", "rows", "seats_in_row", "capacity")
 
 
 class GenreSerializer(ModelSerializer):
@@ -30,7 +32,7 @@ class ActorDetailSerializer(ActorSerializer):
         model = Actor
         fields = ("id", "first_name", "last_name", "full_name")
 
-    def get_full_name(self, obj):
+    def get_full_name(self, obj) -> str:
         return f"{obj.first_name} {obj.last_name}"
 
 
@@ -51,10 +53,6 @@ class MovieDetailSerializer(MovieListSerializer):
     actors = ActorDetailSerializer(many=True)
     genres = GenreSerializer(many=True)
 
-class MovieStringDetailSerializer(MovieDetailSerializer):
-    actors = StringRelatedField(many=True)
-    genres = StringRelatedField(many=True)
-
 
 class MovieDetailPostSerializer(MovieDetailSerializer):
     genres = serializers.PrimaryKeyRelatedField(
@@ -66,7 +64,7 @@ class MovieDetailPostSerializer(MovieDetailSerializer):
         queryset=Actor.objects.all()
     )
 
-    def create(self, validated_data):
+    def create(self, validated_data) -> Movie:
         genres = validated_data.pop("genres", None)
         actors = validated_data.pop("actors", None)
 
@@ -79,7 +77,7 @@ class MovieDetailPostSerializer(MovieDetailSerializer):
 
         return movie
 
-    def update(self, instance, validated_data):
+    def update(self, instance, validated_data) -> Any:
         genres = validated_data.pop("genres", None)
         actors = validated_data.pop("actors", None)
 
@@ -121,7 +119,7 @@ class MovieSessionSerializer(ModelSerializer):
 
 
 class MovieSessionDetailSerializer(ModelSerializer):
-    movie = MovieStringDetailSerializer()
+    movie = MovieListSerializer()
     cinema_hall = CinemaHallSerializer()
 
     class Meta:
@@ -131,10 +129,10 @@ class MovieSessionDetailSerializer(ModelSerializer):
 
 class MovieSessionPostSerializer(ModelSerializer):
     movie = serializers.PrimaryKeyRelatedField(
-        queryset = Movie.objects.all()
+        queryset=Movie.objects.all()
     )
     cinema_hall = serializers.PrimaryKeyRelatedField(
-        queryset = CinemaHall.objects.all()
+        queryset=CinemaHall.objects.all()
     )
 
     class Meta:
